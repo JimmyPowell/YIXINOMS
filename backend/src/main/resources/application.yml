@@ -1,3 +1,0 @@
-jwt:
-  secret: YourSecret256BitKeyHereMustBeAtLeast32Chars!
-  expiration: 86400000  # 24小时，单位：毫秒 
