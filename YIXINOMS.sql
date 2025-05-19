@@ -1,14 +1,17 @@
 -- 用户表
 CREATE TABLE `users` (
-  `id` BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '用户ID',
   `uuid` VARCHAR(36) NOT NULL COMMENT '用户唯一标识符',
-  `user_name` VARCHAR(50) UNIQUE COMMENT '用户名（可为空，用于账号密码登录）',
-  `email` VARCHAR(100) UNIQUE COMMENT '邮箱（可为空，用于账号密码登录）',
-  `phone` VARCHAR(20) UNIQUE COMMENT '手机号（绑定后必填）',
-  `password` VARCHAR(255) COMMENT '加密后的密码（账号密码登录时使用）',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
-  `is_deleted` TINYINT DEFAULT 0 COMMENT '是否删除（0-未删除 1-已删除）'
+  `user_name` VARCHAR(50) NULL UNIQUE COMMENT '用户名（可为空，用于账号密码登录）',
+  `email` VARCHAR(100) NULL UNIQUE COMMENT '邮箱（可为空，用于账号密码登录）',
+  `phone` VARCHAR(20) NULL UNIQUE COMMENT '手机号（绑定后必填）',
+  `password` VARCHAR(255) NULL COMMENT '加密后的密码（账号密码登录时使用）',
+  `avatar_url` VARCHAR(255) NULL COMMENT '用户头像URL',
+  `gender` TINYINT DEFAULT 0 NULL COMMENT '性别（0-未知 1-男 2-女）',
+  `age` INT NULL COMMENT '用户年龄',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP NULL COMMENT '注册时间',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL COMMENT '最后更新时间',
+  `is_deleted` TINYINT DEFAULT 0 NULL COMMENT '是否删除（0-未删除 1-已删除）'
 );
 
 -- 第三方登录关联表
@@ -19,7 +22,7 @@ CREATE TABLE `user_third_party` (
   `open_id` VARCHAR(100) COMMENT '第三方平台用户唯一标识',
   `access_token` VARCHAR(255) COMMENT '第三方平台访问令牌（可选）',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_third_party_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
 -- 角色表
@@ -37,7 +40,10 @@ CREATE TABLE `user_roles` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `created_by` BIGINT COMMENT '创建人',
   KEY `idx_user_id` (`user_id`),
-  KEY `idx_role_id` (`role_id`)
+  KEY `idx_role_id` (`role_id`),
+  CONSTRAINT `fk_user_role_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_role_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_role_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 );
 
 -- 权限表
@@ -47,15 +53,15 @@ CREATE TABLE `permissions` (
   `description` VARCHAR(255)
 );
 
+-- 角色权限关联表
 CREATE TABLE `role_permissions` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
   `role_id` BIGINT NOT NULL,
   `permission_id` BIGINT NOT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  -- 移除外键约束
-  -- FOREIGN KEY (`role_id`) REFERENCES `roles`(`id`) ON DELETE CASCADE
-  -- FOREIGN KEY (`permission_id`) REFERENCES `permissions`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_role_perm_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_role_perm_perm` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,
   UNIQUE KEY `uk_role_permission` (`role_id`, `permission_id`)
 );
 
@@ -71,7 +77,7 @@ CREATE TABLE `orders` (
   `shipping_method` VARCHAR(50) COMMENT '配送方式（express, pickup_in_store）',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_order_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
 -- 订单明细表
@@ -83,7 +89,8 @@ CREATE TABLE `order_items` (
   `quantity` INT COMMENT '购买数量',
   `price` DECIMAL(10,2) COMMENT '单价',
   `subtotal` DECIMAL(10,2) COMMENT '小计金额',
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_order_item_order` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_order_item_product` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE SET NULL
 );
 
 -- 订单状态历史表
@@ -94,7 +101,7 @@ CREATE TABLE `order_status_history` (
   `new_status` VARCHAR(20),
   `changed_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `operator` VARCHAR(50) COMMENT '操作人（用户或系统）',
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_order_history_order` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
 );
 
 -- 订单评价表
@@ -105,8 +112,44 @@ CREATE TABLE `order_reviews` (
   `rating` INT CHECK (rating BETWEEN 1 AND 5) COMMENT '评分（1-5）',
   `comment` TEXT COMMENT '评价内容',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_review_order` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
+
+-- 商品分类表
+CREATE TABLE `category` (
+    `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+    `name` VARCHAR(255) NOT NULL COMMENT '分类名称（如：电子产品、手机、智能手机）',
+    `parent_id` BIGINT COMMENT '父分类ID，0表示根分类',
+    `is_leaf` BOOLEAN DEFAULT FALSE COMMENT '是否为叶子节点（用于分页控制）',
+    `level` INT DEFAULT 0 COMMENT '层级深度（可选）',
+    `path` VARCHAR(255) COMMENT '路径信息（可选）',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME ON UPDATE CURRENT_TIMESTAMP,
+    `status` TINYINT DEFAULT 1 COMMENT '分类状态（1:启用，0:禁用）',
+    `description` TEXT COMMENT '分类描述（可选）',
+    CONSTRAINT `fk_category_parent` FOREIGN KEY (`parent_id`) REFERENCES `category` (`id`) ON DELETE SET NULL
+);
+
+-- 商品表
+CREATE TABLE `products` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `uuid` VARCHAR(36) NULL COMMENT '商品唯一标识符',
+  `cover_image_url` VARCHAR(255) NULL COMMENT '商品封面图片对象存储URL',
+  `description_mongo_id` VARCHAR(24) NULL COMMENT '商品详细描述的MongoDB文档ID',
+  `category_id` BIGINT NULL,
+  `name` VARCHAR(200) NULL,
+  `description` TEXT NULL,
+  `price` DECIMAL(10,2) NULL,
+  `status` VARCHAR(20) DEFAULT 'on_sale' NULL COMMENT '商品状态（on_sale, off_sale, out_of_stock）',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP NULL,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL,
+  CONSTRAINT `fk_product_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE SET NULL
+);
+
+CREATE INDEX `idx_product_category` ON `products` (`category_id`);
+CREATE INDEX `idx_product_uuid` ON `products` (`uuid`);
+
 -- 商品库存表
 CREATE TABLE `inventory` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -115,7 +158,8 @@ CREATE TABLE `inventory` (
   `available_stock` INT DEFAULT 0 COMMENT '可用库存',
   `locked_stock` INT DEFAULT 0 COMMENT '锁定库存（已下单但未发货）',
   `low_stock_threshold` INT DEFAULT 10 COMMENT '库存预警阈值',
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_inventory_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
 );
 
 -- 库存变动记录表
@@ -125,8 +169,10 @@ CREATE TABLE `inventory_logs` (
   `change_type` VARCHAR(20) COMMENT '变动类型（inbound, outbound, cancel）',
   `quantity` INT COMMENT '变动数量',
   `related_id` BIGINT COMMENT '关联ID（如订单ID或采购单ID）',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT `fk_inventory_log_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE
 );
+
 -- 物流商表
 CREATE TABLE `logistics_providers` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -145,8 +191,8 @@ CREATE TABLE `logistics_info` (
   `estimated_delivery` DATETIME COMMENT '预计送达时间',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`provider_id`) REFERENCES `logistics_providers`(`id`)
+  CONSTRAINT `fk_logistics_order` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_logistics_provider` FOREIGN KEY (`provider_id`) REFERENCES `logistics_providers`(`id`) ON DELETE SET NULL
 );
 
 -- 物流轨迹表
@@ -156,8 +202,9 @@ CREATE TABLE `logistics_tracks` (
   `status` VARCHAR(50) COMMENT '轨迹状态（如已揽件、运输中）',
   `location` VARCHAR(255) COMMENT '位置信息',
   `timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`logistics_id`) REFERENCES `logistics_info`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_logistics_track_info` FOREIGN KEY (`logistics_id`) REFERENCES `logistics_info`(`id`) ON DELETE CASCADE
 );
+
 -- 支付记录表
 CREATE TABLE `payments` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -169,7 +216,8 @@ CREATE TABLE `payments` (
   `status` VARCHAR(20) DEFAULT 'pending' COMMENT '支付状态（pending, success, failed, refunded）',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_payment_order` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_payment_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
 );
 
 -- 退款记录表
@@ -181,9 +229,10 @@ CREATE TABLE `refunds` (
   `reason` TEXT COMMENT '退款原因',
   `status` VARCHAR(20) DEFAULT 'processing' COMMENT '退款状态（processing, success, failed）',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`payment_id`) REFERENCES `payments`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_refund_order` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_refund_payment` FOREIGN KEY (`payment_id`) REFERENCES `payments`(`id`) ON DELETE CASCADE
 );
+
 -- 售后申请表
 CREATE TABLE `after_sales_applications` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -195,7 +244,8 @@ CREATE TABLE `after_sales_applications` (
   `logistics_number` VARCHAR(50) COMMENT '退货物流单号',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_aftersale_order` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_aftersale_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
 );
 
 -- 售后处理记录表
@@ -206,28 +256,9 @@ CREATE TABLE `after_sales_logs` (
   `action` VARCHAR(50) COMMENT '操作类型（approve, reject, refund_processed）',
   `note` TEXT COMMENT '操作备注',
   `timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`application_id`) REFERENCES `after_sales_applications`(`id`) ON DELETE CASCADE
-);
--- 商品分类表
-CREATE TABLE `product_categories` (
-  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
-  `category_name` VARCHAR(100) UNIQUE,
-  `parent_id` BIGINT DEFAULT NULL COMMENT '父级分类ID（用于多级分类）',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+  CONSTRAINT `fk_aftersale_log_app` FOREIGN KEY (`application_id`) REFERENCES `after_sales_applications`(`id`) ON DELETE CASCADE
 );
 
--- 商品表
-CREATE TABLE `products` (
-  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
-  `category_id` BIGINT,
-  `name` VARCHAR(200),
-  `description` TEXT,
-  `price` DECIMAL(10,2),
-  `status` VARCHAR(20) DEFAULT 'on_sale' COMMENT '商品状态（on_sale, off_sale, out_of_stock）',
-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`category_id`) REFERENCES `product_categories`(`id`)
-);
 -- 优惠券表
 CREATE TABLE `coupons` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -248,22 +279,10 @@ CREATE TABLE `user_coupons` (
   `used` TINYINT DEFAULT 0 COMMENT '是否已使用（0-未使用 1-已使用）',
   `used_at` DATETIME NULL DEFAULT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`coupon_id`) REFERENCES `coupons`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_user_coupon_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_coupon_coupon` FOREIGN KEY (`coupon_id`) REFERENCES `coupons`(`id`) ON DELETE CASCADE
 );
--- 销售统计视图（示例）
-CREATE VIEW `sales_summary` AS
-SELECT 
-  DATE_FORMAT(created_at, '%Y-%m') AS month,
-  COUNT(*) AS total_orders,
-  SUM(total_amount) AS total_sales
-FROM `orders`
-WHERE status = 'completed'
-GROUP BY DATE_FORMAT(created_at, '%Y-%m');
 
--- 库存预警查询（示例）
-SELECT * FROM `inventory`
-WHERE available_stock <= low_stock_threshold;
 -- 系统配置表（如订单编号生成规则、物流API密钥等）
 CREATE TABLE `system_configs` (
   `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -281,8 +300,23 @@ CREATE TABLE `operation_logs` (
   `description` TEXT,
   `ip_address` VARCHAR(45) COMMENT '操作IP',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_operation_log_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
 );
+
+-- 销售统计视图（示例）
+CREATE VIEW `sales_summary` AS
+SELECT 
+  DATE_FORMAT(created_at, '%Y-%m') AS month,
+  COUNT(*) AS total_orders,
+  SUM(total_amount) AS total_sales
+FROM `orders`
+WHERE status = 'completed'
+GROUP BY DATE_FORMAT(created_at, '%Y-%m');
+
+-- 库存预警查询（示例）
+-- SELECT * FROM `inventory`
+-- WHERE available_stock <= low_stock_threshold;
+
 -- 订单表索引
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_status ON orders(status);
