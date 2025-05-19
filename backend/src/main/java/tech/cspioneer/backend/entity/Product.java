@@ -54,4 +54,14 @@ public class Product {
      * 更新时间
      */
     private LocalDateTime updatedAt;
+
+    /**
+     * 商品图片
+     */
+    private String imageUrl;
+
+    /**
+     * 商品UUID
+     */
+    private String uuid;
 } 

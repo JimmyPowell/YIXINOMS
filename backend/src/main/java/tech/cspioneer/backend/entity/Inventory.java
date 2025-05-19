@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 /**
  * 商品库存表实体类
  */
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
