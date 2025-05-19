@@ -3,9 +3,12 @@ package tech.cspioneer.backend.util;
 import java.security.SecureRandom;
 import java.util.Random;
 
+import org.springframework.stereotype.Component;
+
 /**
  * 验证码工具类
  */
+@Component
 public class CaptchaUtils {
     
     // 使用SecureRandom更安全
@@ -19,7 +22,7 @@ public class CaptchaUtils {
      * 
      * @return 6位数字验证码
      */
-    public static String generateCaptcha() {
+    public String generateCaptcha() {
         return generateCaptcha(DEFAULT_LENGTH);
     }
     
@@ -29,7 +32,7 @@ public class CaptchaUtils {
      * @param length 验证码长度
      * @return 指定长度的数字验证码
      */
-    public static String generateCaptcha(int length) {
+    public String generateCaptcha(int length) {
         if (length <= 0) {
             throw new IllegalArgumentException("验证码长度必须大于0");
         }
@@ -51,7 +54,7 @@ public class CaptchaUtils {
      * @param max 最大值（包含）
      * @return 指定范围内的随机数字验证码
      */
-    public static String generateCaptchaInRange(int min, int max) {
+    public String generateCaptchaInRange(int min, int max) {
         if (min >= max) {
             throw new IllegalArgumentException("最小值必须小于最大值");
         }
@@ -69,7 +72,7 @@ public class CaptchaUtils {
      * @param length 验证码长度
      * @return 首位不为0的数字验证码
      */
-    public static String generateNonZeroLeadingCaptcha(int length) {
+    public String generateNonZeroLeadingCaptcha(int length) {
         if (length <= 0) {
             throw new IllegalArgumentException("验证码长度必须大于0");
         }
@@ -94,7 +97,7 @@ public class CaptchaUtils {
      * @param expectedCaptcha 预期的验证码
      * @return 是否匹配
      */
-    public static boolean validateCaptcha(String captcha, String expectedCaptcha) {
+    public boolean validateCaptcha(String captcha, String expectedCaptcha) {
         if (captcha == null || expectedCaptcha == null) {
             return false;
         }

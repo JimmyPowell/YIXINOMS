@@ -2,8 +2,8 @@ package tech.cspioneer.backend.util;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import javax.mail.*;
-import javax.mail.internet.*;
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
 import java.util.Date;
 import java.util.Properties;
 
@@ -18,27 +18,27 @@ public class SMTPUtils {
 
     @Value("${spring.mail.host}")
     public void setHost(String host) {
-        SendMailUtils.host = host;
+        SMTPUtils.host = host;
     }
 
     @Value("${spring.mail.port}")
     public void setPort(String port) {
-        SendMailUtils.port = port;
+        SMTPUtils.port = port;
     }
 
     @Value("${spring.mail.username}")
     public void setUsername(String username) {
-        SendMailUtils.username = username;
+        SMTPUtils.username = username;
     }
 
     @Value("${spring.mail.password}")
     public void setPassword(String password) {
-        SendMailUtils.password = password;
+        SMTPUtils.password = password;
     }
 
     @Value("${spring.mail.protocol:smtp}")
     public void setProtocol(String protocol) {
-        SendMailUtils.protocol = protocol;
+        SMTPUtils.protocol = protocol;
     }
 
     /**
@@ -48,7 +48,7 @@ public class SMTPUtils {
      * @param content 邮件正文
      * @return 是否发送成功
      */
-    public static boolean sendEmail(String recipientEmail, String title, String content) {
+    public boolean sendEmail(String recipientEmail, String title, String content) {
         try {
             // 1. 创建参数配置, 用于连接邮件服务器的参数配置
             Properties props = new Properties();

@@ -20,5 +20,9 @@ public class UserRegisterRequest {
      * 手机号
      */
     private String phone;
-    
+
+    /**
+     * sessionId
+     * */
+    private String sessionId;
 }

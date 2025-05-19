@@ -1,4 +1,4 @@
-package com.cosv.horizon.entity.response;
+package tech.cspioneer.backend.entity.response;
 //@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 
 import java.io.Serializable;
