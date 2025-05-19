@@ -4,19 +4,27 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import tech.cspioneer.backend.entity.User;
+import tech.cspioneer.backend.entity.request.RefreshTokenRequest;
 import tech.cspioneer.backend.entity.request.UserLoginRequest;
 import tech.cspioneer.backend.entity.request.UserRegisterRequest;
+import tech.cspioneer.backend.entity.response.TokenResponse;
 import tech.cspioneer.backend.entity.response.ValidationResult;
 import tech.cspioneer.backend.mapper.UserMapper;
 import tech.cspioneer.backend.service.AuthService;
 import tech.cspioneer.backend.util.CaptchaUtils;
+import tech.cspioneer.backend.util.JwtUtils;
 import tech.cspioneer.backend.util.RedisUtils;
 import tech.cspioneer.backend.util.SMTPUtils;
 import tech.cspioneer.backend.util.UuidUtils;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -32,6 +40,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtils jwtUtils;
+
+    @Value("${jwt.access-token.expiration}")
+    private Long accessTokenExpiration;
+
+    @Value("${jwt.refresh-token.expiration}")
+    private Long refreshTokenExpiration;
 
     @Override
     public String generateSessionAndVerifyCode(String email) {
@@ -286,6 +303,11 @@ public class AuthServiceImpl implements AuthService {
             String uuid = UuidUtils.generateUuid();
             newUser.setUuid(uuid);
             
+            // 设置新增字段
+            newUser.setAvatarUrl(request.getAvatarUrl());
+            newUser.setGender(request.getGender() != null ? request.getGender() : 0); // 默认为未知性别
+            newUser.setAge(request.getAge());
+            
             // 设置注册时间
             newUser.setCreatedAt(java.time.LocalDateTime.now());
             newUser.setUpdatedAt(java.time.LocalDateTime.now());
@@ -340,10 +362,68 @@ public class AuthServiceImpl implements AuthService {
                 return ValidationResult.fail("密码错误");
             }
             
-            // 登录成功
-            return ValidationResult.success();
+            // 登录成功，返回成功结果
+            ValidationResult result = ValidationResult.success();
+            
+            // 设置用户角色（实际应用中应从数据库获取）
+            List<String> roles = Collections.singletonList("USER");
+            
+            // 生成token
+            TokenResponse tokenResponse = generateTokenResponse(user.getUuid(), roles);
+            result.setData(tokenResponse);
+            
+            return result;
         } catch (Exception e) {
             return ValidationResult.fail("登录失败: " + e.getMessage(), "500");
+        }
+    }
+
+    @Override
+    public TokenResponse generateTokenResponse(String uuid, List<String> roles) {
+        // 生成access token
+        String accessToken = jwtUtils.generateAccessToken(uuid, roles);
+        
+        // 生成refresh token
+        String refreshToken = jwtUtils.generateRefreshToken(uuid);
+        
+        // 计算过期时间（毫秒转为秒）
+        long accessExpiresIn = accessTokenExpiration / 1000;
+        long refreshExpiresIn = refreshTokenExpiration / 1000;
+        
+        // 返回token响应
+        return new TokenResponse(accessToken, refreshToken, accessExpiresIn, refreshExpiresIn);
+    }
+    
+    @Override
+    public ValidationResult refreshToken(RefreshTokenRequest request) {
+        try {
+            if (request == null || request.getRefreshToken() == null || request.getRefreshToken().trim().isEmpty()) {
+                return ValidationResult.fail("刷新令牌不能为空");
+            }
+            
+            // 验证refresh token
+            JwtUtils.TokenValidationResult validationResult = jwtUtils.validateAndExtractRefreshTokenInfo(request.getRefreshToken());
+            
+            if (!validationResult.isValid()) {
+                return ValidationResult.fail(validationResult.getErrorMessage());
+            }
+            
+            // 获取用户ID
+            String uuid = validationResult.getUuid();
+            
+            // TODO: 在实际应用中，应该从数据库中获取用户角色
+            List<String> roles = Collections.singletonList("USER");
+            
+            // 生成新的token
+            TokenResponse tokenResponse = generateTokenResponse(uuid, roles);
+            
+            // 返回成功结果
+            ValidationResult result = ValidationResult.success();
+            result.setData(tokenResponse);
+            
+            return result;
+        } catch (Exception e) {
+            return ValidationResult.fail("刷新令牌失败: " + e.getMessage(), "500");
         }
     }
 }

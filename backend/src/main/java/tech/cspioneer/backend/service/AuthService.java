@@ -1,8 +1,10 @@
 package tech.cspioneer.backend.service;
 
 import tech.cspioneer.backend.entity.User;
+import tech.cspioneer.backend.entity.request.RefreshTokenRequest;
 import tech.cspioneer.backend.entity.request.UserLoginRequest;
 import tech.cspioneer.backend.entity.request.UserRegisterRequest;
+import tech.cspioneer.backend.entity.response.TokenResponse;
 import tech.cspioneer.backend.entity.response.ValidationResult;
 
 public interface AuthService {
@@ -52,7 +54,22 @@ public interface AuthService {
     /**
      * 用户登录
      * @param request 登录请求
-     * @return 验证结果
+     * @return 验证结果和Token响应
      */
     public ValidationResult login(UserLoginRequest request);
+
+    /**
+     * 生成Token
+     * @param uuid 用户ID
+     * @param roles 用户角色
+     * @return Token响应
+     */
+    public TokenResponse generateTokenResponse(String uuid, java.util.List<String> roles);
+
+    /**
+     * 刷新令牌
+     * @param request 刷新令牌请求
+     * @return Token响应
+     */
+    public ValidationResult refreshToken(RefreshTokenRequest request);
 }

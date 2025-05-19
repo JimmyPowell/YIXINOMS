@@ -45,6 +45,21 @@ public class User {
     private String password;
     
     /**
+     * 头像URL
+     */
+    private String avatarUrl;
+    
+    /**
+     * 性别（0-未知 1-男 2-女）
+     */
+    private Integer gender;
+    
+    /**
+     * 年龄
+     */
+    private Integer age;
+    
+    /**
      * 注册时间
      */
     private LocalDateTime createdAt;
@@ -58,4 +73,7 @@ public class User {
      * 是否删除（0-未删除 1-已删除）
      */
     private Integer isDeleted;
+
+    
+    
 } 

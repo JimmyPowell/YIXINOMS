@@ -6,11 +6,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import tech.cspioneer.backend.entity.request.GenerateVerifyCodeRequest;
+import tech.cspioneer.backend.entity.request.RefreshTokenRequest;
 import tech.cspioneer.backend.entity.request.UserLoginRequest;
 import tech.cspioneer.backend.entity.request.UserRegisterRequest;
 import tech.cspioneer.backend.entity.request.VerifyCodeRequest;
 import tech.cspioneer.backend.entity.response.HttpResponseEntity;
 import tech.cspioneer.backend.entity.response.SessionResponse;
+import tech.cspioneer.backend.entity.response.TokenResponse;
 import tech.cspioneer.backend.entity.response.ValidationResult;
 import tech.cspioneer.backend.service.AuthService;
 
@@ -139,7 +141,7 @@ public class AuthController {
             if (result.isValid()) {
                 responseEntity.setCode("200");
                 responseEntity.setMessage("登录成功");
-                responseEntity.setData(null);
+                responseEntity.setData(result.getData());
                 return new ResponseEntity<>(responseEntity, HttpStatus.OK);
             } else {
                 responseEntity.setCode(result.getCode());
@@ -150,6 +152,39 @@ public class AuthController {
         } catch (Exception e) {
             responseEntity.setCode("500");
             responseEntity.setMessage("登录失败: " + e.getMessage());
+            responseEntity.setData(null);
+            return new ResponseEntity<>(responseEntity, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
+    /**
+     * 刷新令牌
+     * @param request 刷新令牌请求
+     * @return 新的令牌
+     */
+    @PostMapping("/refresh-token")
+    public ResponseEntity<HttpResponseEntity> refreshToken(@RequestBody RefreshTokenRequest request) {
+        // 创建响应体
+        HttpResponseEntity responseEntity = new HttpResponseEntity();
+
+        try {
+            // 调用刷新令牌服务
+            ValidationResult result = authService.refreshToken(request);
+            
+            if (result.isValid()) {
+                responseEntity.setCode("200");
+                responseEntity.setMessage("令牌刷新成功");
+                responseEntity.setData(result.getData());
+                return new ResponseEntity<>(responseEntity, HttpStatus.OK);
+            } else {
+                responseEntity.setCode(result.getCode());
+                responseEntity.setMessage(result.getMessage());
+                responseEntity.setData(null);
+                return new ResponseEntity<>(responseEntity, HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            responseEntity.setCode("500");
+            responseEntity.setMessage("令牌刷新失败: " + e.getMessage());
             responseEntity.setData(null);
             return new ResponseEntity<>(responseEntity, HttpStatus.INTERNAL_SERVER_ERROR);
         }

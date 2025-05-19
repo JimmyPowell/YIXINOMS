@@ -28,11 +28,25 @@ public class ValidationResult {
     private String code;
     
     /**
+     * 附加数据
+     */
+    private Object data;
+    
+    /**
      * 创建成功结果
      * @return 成功结果
      */
     public static ValidationResult success() {
-        return new ValidationResult(true, null, null);
+        return new ValidationResult(true, null, null, null);
+    }
+    
+    /**
+     * 创建带数据的成功结果
+     * @param data 数据
+     * @return 成功结果
+     */
+    public static ValidationResult success(Object data) {
+        return new ValidationResult(true, null, null, data);
     }
     
     /**
@@ -41,7 +55,7 @@ public class ValidationResult {
      * @return 失败结果
      */
     public static ValidationResult fail(String message) {
-        return new ValidationResult(false, message, "400");
+        return new ValidationResult(false, message, "400", null);
     }
     
     /**
@@ -51,6 +65,6 @@ public class ValidationResult {
      * @return 失败结果
      */
     public static ValidationResult fail(String message, String code) {
-        return new ValidationResult(false, message, code);
+        return new ValidationResult(false, message, code, null);
     }
 } 
