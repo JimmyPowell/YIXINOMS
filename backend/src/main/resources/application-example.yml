@@ -1,0 +1,43 @@
+jwt:
+  # 使用至少32个字符的强密钥替换此处
+  secret: YourSecretKeyHere
+  # 24小时，单位：毫秒
+  expiration: 86400000  
+
+spring:
+  mail:
+    # 邮件服务器配置
+    host: ${MAIL_HOST:smtp.example.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:your-email@example.com}
+    password: ${MAIL_PASSWORD:your-email-password-or-app-code}
+    protocol: smtp
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.ssl.enable: true
+      mail.smtp.ssl.protocols: TLSv1.2
+      mail.smtp.socketFactory.class: javax.net.ssl.SSLSocketFactory
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
+  # 数据库配置（需要根据实际环境配置）
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:yixinoms}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:your-db-password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+# MyBatis配置
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: tech.cspioneer.backend.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+# 日志配置
+logging:
+  level:
+    tech.cspioneer.backend: ${LOG_LEVEL:info}
+    org.springframework: warn 

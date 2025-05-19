@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Application Configs ###
+/src/main/resources/application.yml
+/src/main/resources/application-*.yml
+!/src/main/resources/application-example.yml
