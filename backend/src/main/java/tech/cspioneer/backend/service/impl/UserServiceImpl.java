@@ -120,15 +120,15 @@ public class UserServiceImpl implements UserService {
             String uuid = (String) authentication.getPrincipal();
             
             // 检查权限 - 如果用户要更改用户名，需要检查是否有权限
-            if (request.getUserName() != null) {
-                // 检查用户是否有ADMIN角色
-                Collection<?> authorities = authentication.getAuthorities();
-                boolean isAdmin = authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            // if (request.getUserName() != null) {
+            //     // 检查用户是否有ADMIN角色
+            //     Collection<?> authorities = authentication.getAuthorities();
+            //     boolean isAdmin = authorities.contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
                 
-                if (!isAdmin) {
-                    return ValidationResult.fail("您没有权限修改用户名", "403");
-                }
-            }
+            //     if (!isAdmin) {
+            //         return ValidationResult.fail("您没有权限修改用户名", "403");
+            //     }
+            // }
             
             // 构建更新对象
             User userToUpdate = new User();

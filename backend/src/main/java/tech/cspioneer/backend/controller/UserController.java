@@ -68,6 +68,7 @@ public class UserController {
      * @param request 更新请求
      * @return 更新结果
      */
+    
     @PutMapping("/profile")
     public ResponseEntity<HttpResponseEntity> updateUserProfile(@RequestBody UserUpdateRequest request) {
         HttpResponseEntity responseEntity = new HttpResponseEntity();
