@@ -117,18 +117,14 @@ CREATE TABLE `order_reviews` (
 );
 
 -- 商品分类表
-CREATE TABLE `category` (
-    `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
-    `name` VARCHAR(255) NOT NULL COMMENT '分类名称（如：电子产品、手机、智能手机）',
-    `parent_id` BIGINT COMMENT '父分类ID，0表示根分类',
-    `is_leaf` BOOLEAN DEFAULT FALSE COMMENT '是否为叶子节点（用于分页控制）',
-    `level` INT DEFAULT 0 COMMENT '层级深度（可选）',
-    `path` VARCHAR(255) COMMENT '路径信息（可选）',
-    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` DATETIME ON UPDATE CURRENT_TIMESTAMP,
-    `status` TINYINT DEFAULT 1 COMMENT '分类状态（1:启用，0:禁用）',
-    `description` TEXT COMMENT '分类描述（可选）',
-    CONSTRAINT `fk_category_parent` FOREIGN KEY (`parent_id`) REFERENCES `category` (`id`) ON DELETE SET NULL
+CREATE TABLE `product_category` (
+  `id` BIGINT PRIMARY KEY AUTO_INCREMENT,
+  `category_name` VARCHAR(100) UNIQUE COMMENT '分类名称',
+  `parent_id` BIGINT DEFAULT NULL COMMENT '父级分类ID（兼容字段，可不使用）',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `status` TINYINT DEFAULT 1 COMMENT '分类状态（1:启用，0:禁用）',
+  `description` TEXT COMMENT '分类描述'
 );
 
 -- 商品表
@@ -144,7 +140,7 @@ CREATE TABLE `products` (
   `status` VARCHAR(20) DEFAULT 'on_sale' NULL COMMENT '商品状态（on_sale, off_sale, out_of_stock）',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP NULL,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL,
-  CONSTRAINT `fk_product_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_product_category` FOREIGN KEY (`category_id`) REFERENCES `product_category` (`id`) ON DELETE SET NULL
 );
 
 CREATE INDEX `idx_product_category` ON `products` (`category_id`);
